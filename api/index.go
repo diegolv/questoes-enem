@@ -9,11 +9,15 @@ import (
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
+	
+	// Debug info
+	wd, _ := os.Getwd()
+	debugInfo := "\nPath: " + path + "\nWD: " + wd
 
 	// Rota para listar provas
-	if path == "exams" {
+	if path == "exams" || strings.HasSuffix(path, "/exams") {
 		if r.Method != http.MethodGet {
-			http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+			http.Error(w, "Método não permitido"+debugInfo, http.StatusMethodNotAllowed)
 			return
 		}
 		serveJSON(w, "backend-go/data/exams.json")
@@ -21,34 +25,54 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Rota para detalhes da questão: exams/{year}/questions/{id}
-	if strings.HasPrefix(path, "exams/") {
+	if strings.Contains(path, "exams/") {
 		parts := strings.Split(path, "/")
-		if len(parts) == 4 && parts[2] == "questions" {
-			year := parts[1]
-			id := parts[3]
+		// Encontrar o índice de "exams" para lidar com possíveis prefixos como /api/index
+		idx := -1
+		for i, p := range parts {
+			if p == "exams" {
+				idx = i
+				break
+			}
+		}
+
+		if idx != -1 && len(parts) >= idx+4 && parts[idx+2] == "questions" {
+			year := parts[idx+1]
+			id := parts[idx+3]
 			filePath := filepath.Join("backend-go", "data", year, "questions", id, "details.json")
-			serveJSON(w, filePath)
+			serveJSON(w, filePath+debugInfo, filePath)
 			return
 		}
 	}
 
 	// Rota para arquivos estáticos: data/...
-	if strings.HasPrefix(path, "data/") {
-		filePath := filepath.Join("backend-go", path)
-		serveFile(w, filePath)
-		return
+	if strings.Contains(path, "data/") {
+		parts := strings.Split(path, "/")
+		idx := -1
+		for i, p := range parts {
+			if p == "data" {
+				idx = i
+				break
+			}
+		}
+		if idx != -1 {
+			dataRelPath := strings.Join(parts[idx:], "/")
+			filePath := filepath.Join("backend-go", dataRelPath)
+			serveFile(w, filePath+debugInfo, filePath)
+			return
+		}
 	}
 
-	http.NotFound(w, r)
+	http.Error(w, "Caminho não mapeado: "+path+debugInfo, http.StatusNotFound)
 }
 
-func serveJSON(w http.ResponseWriter, filePath string) {
+func serveJSON(w http.ResponseWriter, errorMsg string, filePath string) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			http.Error(w, "Recurso não encontrado", http.StatusNotFound)
+			http.Error(w, "Recurso não encontrado: "+errorMsg, http.StatusNotFound)
 		} else {
-			http.Error(w, "Erro interno do servidor", http.StatusInternalServerError)
+			http.Error(w, "Erro interno do servidor: "+err.Error()+errorMsg, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -58,16 +82,17 @@ func serveJSON(w http.ResponseWriter, filePath string) {
 	w.Write(data)
 }
 
-func serveFile(w http.ResponseWriter, filePath string) {
+func serveFile(w http.ResponseWriter, errorMsg string, filePath string) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			http.Error(w, "Arquivo não encontrado", http.StatusNotFound)
+			http.Error(w, "Arquivo não encontrado: "+errorMsg, http.StatusNotFound)
 		} else {
-			http.Error(w, "Erro interno ao ler arquivo", http.StatusInternalServerError)
+			http.Error(w, "Erro interno ao ler arquivo: "+err.Error()+errorMsg, http.StatusInternalServerError)
 		}
 		return
 	}
+    ...
 
 	// Tentar inferir o Content-Type pela extensão
 	ext := filepath.Ext(filePath)
