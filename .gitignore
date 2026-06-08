@@ -1,0 +1,15 @@
+# Binaries
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go
+go.work
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
