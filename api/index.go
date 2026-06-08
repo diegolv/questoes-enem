@@ -9,10 +9,20 @@ import (
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
-	
+
 	// Debug info
 	wd, _ := os.Getwd()
-	debugInfo := "\nPath: " + path + "\nWD: " + wd
+
+	// List files for debugging
+	var filesList []string
+	filepath.Walk(".", func(p string, info os.FileInfo, err error) error {
+		if err == nil && !info.IsDir() && !strings.Contains(p, ".go") {
+			filesList = append(filesList, p)
+		}
+		return nil
+	})
+	debugInfo := "\nPath: " + path + "\nWD: " + wd + "\nFiles: " + strings.Join(filesList, ", ")
+...
 
 	// Rota para listar provas
 	if path == "exams" || strings.HasSuffix(path, "/exams") {
