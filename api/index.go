@@ -1,43 +1,26 @@
 package handler
 
 import (
+	"embed"
+	"io/fs"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 )
 
+//go:embed data
+var dataFS embed.FS
+
 func Handler(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
-
-	// Debug info
-	wd, _ := os.Getwd()
-
-	// List files for debugging (only if path is "debug")
-	if path == "debug" {
-		var filesList []string
-		filepath.Walk(".", func(p string, info os.FileInfo, err error) error {
-			if err == nil && !info.IsDir() {
-				filesList = append(filesList, p)
-			}
-			return nil
-		})
-		debugInfo := "\nWD: " + wd + "\nFiles: " + strings.Join(filesList, ", ")
-		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Debug Info:" + debugInfo))
-		return
-	}
-
-	debugInfo := "\nPath: " + path + "\nWD: " + wd
 
 	// Rota para listar provas
 	if path == "exams" || strings.HasSuffix(path, "/exams") {
 		if r.Method != http.MethodGet {
-			http.Error(w, "Método não permitido"+debugInfo, http.StatusMethodNotAllowed)
+			http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
 			return
 		}
-		serveJSON(w, "api/data/exams.json", debugInfo)
+		serveJSON(w, "data/exams.json")
 		return
 	}
 
@@ -55,8 +38,8 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		if idx != -1 && len(parts) >= idx+4 && parts[idx+2] == "questions" {
 			year := parts[idx+1]
 			id := parts[idx+3]
-			filePath := filepath.Join("api", "data", year, "questions", id, "details.json")
-			serveJSON(w, filePath, debugInfo)
+			filePath := "data/" + year + "/questions/" + id + "/details.json"
+			serveJSON(w, filePath)
 			return
 		}
 	}
@@ -73,23 +56,19 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 		if idx != -1 {
 			dataRelPath := strings.Join(parts[idx:], "/")
-			filePath := filepath.Join("api", dataRelPath)
-			serveFile(w, filePath, debugInfo)
+			filePath := "data/" + dataRelPath
+			serveFile(w, filePath)
 			return
 		}
 	}
 
-	http.Error(w, "Caminho não mapeado: "+path+debugInfo, http.StatusNotFound)
+	http.Error(w, "Caminho não encontrado: "+path, http.StatusNotFound)
 }
 
-func serveJSON(w http.ResponseWriter, filePath string, debugInfo string) {
-	data, err := os.ReadFile(filePath)
+func serveJSON(w http.ResponseWriter, filePath string) {
+	data, err := dataFS.ReadFile(filePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			http.Error(w, "Recurso não encontrado: "+filePath+debugInfo, http.StatusNotFound)
-		} else {
-			http.Error(w, "Erro interno do servidor: "+err.Error()+debugInfo, http.StatusInternalServerError)
-		}
+		http.Error(w, "Recurso não encontrado: "+filePath, http.StatusNotFound)
 		return
 	}
 
@@ -98,18 +77,13 @@ func serveJSON(w http.ResponseWriter, filePath string, debugInfo string) {
 	w.Write(data)
 }
 
-func serveFile(w http.ResponseWriter, filePath string, debugInfo string) {
-	data, err := os.ReadFile(filePath)
+func serveFile(w http.ResponseWriter, filePath string) {
+	data, err := dataFS.ReadFile(filePath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			http.Error(w, "Arquivo não encontrado: "+filePath+debugInfo, http.StatusNotFound)
-		} else {
-			http.Error(w, "Erro interno ao ler arquivo: "+err.Error()+debugInfo, http.StatusInternalServerError)
-		}
+		http.Error(w, "Arquivo não encontrado: "+filePath, http.StatusNotFound)
 		return
 	}
 
-	// Tentar inferir o Content-Type pela extensão
 	ext := filepath.Ext(filePath)
 	contentType := "application/octet-stream"
 	switch ext {
