@@ -49,7 +49,7 @@ export default function Home() {
 
   // Fetch initial list of exams
   useEffect(() => {
-    fetch("/api/exams")
+    fetch("/data/exams.json")
       .then((res) => res.json())
       .then((data) => {
         setExams(data);
@@ -66,7 +66,7 @@ export default function Home() {
     if (!selectedYear) return;
 
     setLoadingQuestions(true);
-    fetch(`/api/exams/${selectedYear}`)
+    fetch(`/data/${selectedYear}/details.json`)
       .then((res) => res.json())
       .then((data: ExamDetails) => {
         setQuestions(data.questions);

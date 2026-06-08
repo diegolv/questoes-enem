@@ -43,7 +43,8 @@ export default function QuestionPage({ params: paramsPromise }: { params: Promis
 
   useEffect(() => {
     const lang = searchParams.get("lang");
-    const url = `/api/exams/${params.year}/questions/${params.id}${lang ? `?lang=${lang}` : ''}`;
+    const folderName = lang ? `${params.id}-${lang}` : params.id;
+    const url = `/data/${params.year}/questions/${folderName}/details.json`;
     
     fetch(url)
       .then((res) => res.json())
@@ -117,15 +118,19 @@ export default function QuestionPage({ params: paramsPromise }: { params: Promis
           </CardHeader>
           <CardContent className="p-6 md:p-8 bg-white dark:bg-zinc-900">
             {/* Images if any */}
-            {question.files && question.files.map((file, idx) => (
-              <div key={idx} className="mb-6 rounded-lg overflow-hidden border border-slate-100 dark:border-zinc-800">
-                <img 
-                  src={`/api/data/${question.year}/questions/${question.index}/${file}`} 
-                  alt={`Figura ${idx + 1}`}
-                  className="w-full h-auto max-h-[500px] object-contain bg-slate-50"
-                />
-              </div>
-            ))}
+            {question.files && question.files.map((file, idx) => {
+              const lang = searchParams.get("lang");
+              const folderName = lang ? `${params.id}-${lang}` : params.id;
+              return (
+                <div key={idx} className="mb-6 rounded-lg overflow-hidden border border-slate-100 dark:border-zinc-800">
+                  <img 
+                    src={`/data/${question.year}/questions/${folderName}/${file}`} 
+                    alt={`Figura ${idx + 1}`}
+                    className="w-full h-auto max-h-[500px] object-contain bg-slate-50"
+                  />
+                </div>
+              );
+            })}
 
             <div 
               className="prose prose-slate dark:prose-invert max-w-none text-lg text-slate-700 dark:text-zinc-300 leading-relaxed mb-8"
@@ -182,25 +187,47 @@ export default function QuestionPage({ params: paramsPromise }: { params: Promis
                   Verificar Resposta
                 </Button>
               ) : (
-                <div className="flex flex-col sm:flex-row gap-4 w-full">
-                   <Button 
-                    variant="outline" 
-                    size="lg"
-                    className="flex-1 rounded-full h-12 border-2 gap-2"
-                    onClick={() => {
-                        setShowResult(false);
-                        setSelectedAlternative(null);
-                    }}
-                  >
-                    Tentar Novamente
-                  </Button>
-                  <Button 
-                    size="lg" 
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 rounded-full h-12 gap-2 text-white font-bold shadow-lg shadow-purple-200 dark:shadow-none"
-                  >
-                    <Sparkles className="w-5 h-5" />
-                    Explicar com IA
-                  </Button>
+                <div className="flex flex-col gap-6 w-full">
+                  <div className="flex flex-col sm:flex-row gap-4 w-full">
+                    <Button 
+                      variant="outline" 
+                      size="lg"
+                      className="flex-1 rounded-full h-12 border-2 gap-2"
+                      onClick={() => {
+                          setShowResult(false);
+                          setSelectedAlternative(null);
+                          setExplanation(null);
+                      }}
+                    >
+                      Tentar Novamente
+                    </Button>
+                    <Button 
+                      size="lg" 
+                      onClick={handleExplain}
+                      disabled={loadingAI || !!explanation}
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 rounded-full h-12 gap-2 text-white font-bold shadow-lg shadow-purple-200 dark:shadow-none"
+                    >
+                      <Sparkles className={`w-5 h-5 ${loadingAI ? 'animate-pulse' : ''}`} />
+                      {loadingAI ? "Gerando explicação..." : explanation ? "Explicação Gerada" : "Explicar com IA"}
+                    </Button>
+                  </div>
+
+                  {explanation && (
+                    <Card className="bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400">
+                          <Sparkles className="w-4 h-4" />
+                          <h3 className="font-bold text-sm uppercase tracking-tight">Explicação do Especialista</h3>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div 
+                          className="text-slate-700 dark:text-zinc-300 leading-relaxed whitespace-pre-wrap"
+                          dangerouslySetInnerHTML={{ __html: explanation.replace(/\n/g, '<br />') }}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               )}
             </div>
