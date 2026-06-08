@@ -13,16 +13,24 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	// Debug info
 	wd, _ := os.Getwd()
 
-	// List files for debugging
-	var filesList []string
-	filepath.Walk(".", func(p string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() && !strings.Contains(p, ".go") {
-			filesList = append(filesList, p)
-		}
-		return nil
-	})
-	debugInfo := "\nPath: " + path + "\nWD: " + wd + "\nFiles: " + strings.Join(filesList, ", ")
-...
+	// List files for debugging (only if path is "debug")
+	var debugInfo string
+	if path == "debug" {
+		var filesList []string
+		filepath.Walk(".", func(p string, info os.FileInfo, err error) error {
+			if err == nil && !info.IsDir() {
+				filesList = append(filesList, p)
+			}
+			return nil
+		})
+		debugInfo = "\nWD: " + wd + "\nFiles: " + strings.Join(filesList, ", ")
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Debug Info:" + debugInfo))
+		return
+	}
+
+	debugInfo = "\nPath: " + path + "\nWD: " + wd
 
 	// Rota para listar provas
 	if path == "exams" || strings.HasSuffix(path, "/exams") {
