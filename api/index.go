@@ -23,7 +23,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Rota para detalhes da questão: exams/{year}/questions/{id}
+	// Rota para detalhes do exame (lista de questões): exams/{year}
 	if strings.Contains(path, "exams/") {
 		parts := strings.Split(path, "/")
 		idx := -1
@@ -34,10 +34,26 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		if idx != -1 && len(parts) == idx+2 {
+			year := parts[idx+1]
+			filePath := "data/" + year + "/details.json"
+			serveJSON(w, filePath)
+			return
+		}
+
+		// Rota para detalhes da questão: exams/{year}/questions/{id}
 		if idx != -1 && len(parts) >= idx+4 && parts[idx+2] == "questions" {
 			year := parts[idx+1]
 			id := parts[idx+3]
-			filePath := "data/" + year + "/questions/" + id + "/details.json"
+			
+			// Lidar com idiomas (ex: 1-ingles)
+			lang := r.URL.Query().Get("lang")
+			folderName := id
+			if lang != "" {
+				folderName = id + "-" + lang
+			}
+
+			filePath := "data/" + year + "/questions/" + folderName + "/details.json"
 			serveJSON(w, filePath)
 			return
 		}
