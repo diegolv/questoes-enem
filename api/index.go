@@ -20,14 +20,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Método não permitido"+debugInfo, http.StatusMethodNotAllowed)
 			return
 		}
-		serveJSON(w, "backend-go/data/exams.json")
+		serveJSON(w, "backend-go/data/exams.json", debugInfo)
 		return
 	}
 
 	// Rota para detalhes da questão: exams/{year}/questions/{id}
 	if strings.Contains(path, "exams/") {
 		parts := strings.Split(path, "/")
-		// Encontrar o índice de "exams" para lidar com possíveis prefixos como /api/index
 		idx := -1
 		for i, p := range parts {
 			if p == "exams" {
@@ -40,7 +39,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			year := parts[idx+1]
 			id := parts[idx+3]
 			filePath := filepath.Join("backend-go", "data", year, "questions", id, "details.json")
-			serveJSON(w, filePath+debugInfo, filePath)
+			serveJSON(w, filePath, debugInfo)
 			return
 		}
 	}
@@ -58,7 +57,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		if idx != -1 {
 			dataRelPath := strings.Join(parts[idx:], "/")
 			filePath := filepath.Join("backend-go", dataRelPath)
-			serveFile(w, filePath+debugInfo, filePath)
+			serveFile(w, filePath, debugInfo)
 			return
 		}
 	}
@@ -66,13 +65,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Caminho não mapeado: "+path+debugInfo, http.StatusNotFound)
 }
 
-func serveJSON(w http.ResponseWriter, errorMsg string, filePath string) {
+func serveJSON(w http.ResponseWriter, filePath string, debugInfo string) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			http.Error(w, "Recurso não encontrado: "+errorMsg, http.StatusNotFound)
+			http.Error(w, "Recurso não encontrado: "+filePath+debugInfo, http.StatusNotFound)
 		} else {
-			http.Error(w, "Erro interno do servidor: "+err.Error()+errorMsg, http.StatusInternalServerError)
+			http.Error(w, "Erro interno do servidor: "+err.Error()+debugInfo, http.StatusInternalServerError)
 		}
 		return
 	}
@@ -82,17 +81,16 @@ func serveJSON(w http.ResponseWriter, errorMsg string, filePath string) {
 	w.Write(data)
 }
 
-func serveFile(w http.ResponseWriter, errorMsg string, filePath string) {
+func serveFile(w http.ResponseWriter, filePath string, debugInfo string) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			http.Error(w, "Arquivo não encontrado: "+errorMsg, http.StatusNotFound)
+			http.Error(w, "Arquivo não encontrado: "+filePath+debugInfo, http.StatusNotFound)
 		} else {
-			http.Error(w, "Erro interno ao ler arquivo: "+err.Error()+errorMsg, http.StatusInternalServerError)
+			http.Error(w, "Erro interno ao ler arquivo: "+err.Error()+debugInfo, http.StatusInternalServerError)
 		}
 		return
 	}
-    ...
 
 	// Tentar inferir o Content-Type pela extensão
 	ext := filepath.Ext(filePath)
