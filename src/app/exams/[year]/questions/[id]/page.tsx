@@ -40,6 +40,8 @@ export default function QuestionPage({ params: paramsPromise }: { params: Promis
   const [loading, setLoading] = useState(true);
   const [selectedAlternative, setSelectedAlternative] = useState<string | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [loadingAI, setLoadingAI] = useState(false);
 
   useEffect(() => {
     const lang = searchParams.get("lang");
@@ -84,6 +86,34 @@ export default function QuestionPage({ params: paramsPromise }: { params: Promis
   const handleCheck = () => {
     if (selectedAlternative) {
       setShowResult(true);
+    }
+  };
+
+  const handleExplain = async () => {
+    if (!question) return;
+    
+    setLoadingAI(true);
+    try {
+      const response = await fetch("/api/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: question.title,
+          content: question.content,
+          correctAlternative: question.correctAlternative,
+          alternatives: question.alternatives,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Erro ao buscar explicação");
+      
+      const data = await response.json();
+      setExplanation(data.explanation);
+    } catch (err) {
+      console.error(err);
+      alert("Houve um erro ao gerar a explicação com IA.");
+    } finally {
+      setLoadingAI(false);
     }
   };
 
