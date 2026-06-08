@@ -5,7 +5,7 @@
   ],
   "functions": {
     "api/**/*.go": {
-      "includeFiles": "backend-go/data/**"
+      "includeFiles": "api/data/**"
     }
   }
 }

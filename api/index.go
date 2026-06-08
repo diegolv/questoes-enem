@@ -14,7 +14,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	wd, _ := os.Getwd()
 
 	// List files for debugging (only if path is "debug")
-	var debugInfo string
 	if path == "debug" {
 		var filesList []string
 		filepath.Walk(".", func(p string, info os.FileInfo, err error) error {
@@ -23,14 +22,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			}
 			return nil
 		})
-		debugInfo = "\nWD: " + wd + "\nFiles: " + strings.Join(filesList, ", ")
+		debugInfo := "\nWD: " + wd + "\nFiles: " + strings.Join(filesList, ", ")
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("Debug Info:" + debugInfo))
 		return
 	}
 
-	debugInfo = "\nPath: " + path + "\nWD: " + wd
+	debugInfo := "\nPath: " + path + "\nWD: " + wd
 
 	// Rota para listar provas
 	if path == "exams" || strings.HasSuffix(path, "/exams") {
@@ -38,7 +37,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Método não permitido"+debugInfo, http.StatusMethodNotAllowed)
 			return
 		}
-		serveJSON(w, "backend-go/data/exams.json", debugInfo)
+		serveJSON(w, "api/data/exams.json", debugInfo)
 		return
 	}
 
@@ -56,7 +55,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		if idx != -1 && len(parts) >= idx+4 && parts[idx+2] == "questions" {
 			year := parts[idx+1]
 			id := parts[idx+3]
-			filePath := filepath.Join("backend-go", "data", year, "questions", id, "details.json")
+			filePath := filepath.Join("api", "data", year, "questions", id, "details.json")
 			serveJSON(w, filePath, debugInfo)
 			return
 		}
@@ -74,7 +73,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 		if idx != -1 {
 			dataRelPath := strings.Join(parts[idx:], "/")
-			filePath := filepath.Join("backend-go", dataRelPath)
+			filePath := filepath.Join("api", dataRelPath)
 			serveFile(w, filePath, debugInfo)
 			return
 		}
