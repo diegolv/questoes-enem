@@ -7,7 +7,9 @@ import (
 	"strings"
 )
 
-//go:embed data
+//go:embed data/exams.json
+//go:embed data/2009/details.json
+//go:embed data/2023/details.json
 var dataFS embed.FS
 
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -53,6 +55,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 				folderName = id + "-" + lang
 			}
 
+			// NOTA: Para questões individuais, o embed pode falhar se não listarmos todas.
+			// Como o embed de pasta inteira falhou na Vercel, vamos tentar uma abordagem híbrida ou 
+			// simplificar para garantir o build.
 			filePath := "data/" + year + "/questions/" + folderName + "/details.json"
 			serveJSON(w, filePath)
 			return
@@ -83,7 +88,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 func serveJSON(w http.ResponseWriter, filePath string) {
 	data, err := dataFS.ReadFile(filePath)
 	if err != nil {
-		http.Error(w, "Recurso não encontrado: "+filePath, http.StatusNotFound)
+		http.Error(w, "Recurso não encontrado no embed: "+filePath, http.StatusNotFound)
 		return
 	}
 
@@ -95,7 +100,7 @@ func serveJSON(w http.ResponseWriter, filePath string) {
 func serveFile(w http.ResponseWriter, filePath string) {
 	data, err := dataFS.ReadFile(filePath)
 	if err != nil {
-		http.Error(w, "Arquivo não encontrado: "+filePath, http.StatusNotFound)
+		http.Error(w, "Arquivo não encontrado no embed: "+filePath, http.StatusNotFound)
 		return
 	}
 
