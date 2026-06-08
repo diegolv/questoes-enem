@@ -113,7 +113,7 @@ export default function Home() {
             {/* Year Select */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">Ano da Edição</label>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <Select value={selectedYear} onValueChange={(val) => setSelectedYear(val ?? "")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Selecione o ano" />
                 </SelectTrigger>
@@ -130,7 +130,7 @@ export default function Home() {
             {/* Discipline Select */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">Disciplina</label>
-              <Select value={selectedDiscipline} onValueChange={setSelectedDiscipline}>
+              <Select value={selectedDiscipline} onValueChange={(val) => setSelectedDiscipline(val ?? "all")}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Todas as disciplinas" />
                 </SelectTrigger>
@@ -150,7 +150,7 @@ export default function Home() {
               <label className="text-sm font-medium text-slate-700 dark:text-zinc-300">Idioma (Opcional)</label>
               <Select 
                 value={selectedLanguage} 
-                onValueChange={setSelectedLanguage}
+                onValueChange={(val) => setSelectedLanguage(val ?? "all")}
                 disabled={selectedDiscipline !== "linguagens" && selectedDiscipline !== "all"}
               >
                 <SelectTrigger className="w-full">
